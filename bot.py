@@ -10,7 +10,7 @@ import yt_dlp
 import os
 import uuid
 
-BOT_TOKEN = "7507458414:AAFSld8gcDYPk54khl3gyHJneJ2BNK2VXeU"
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 # إنشاء مجلد التنزيل
 os.makedirs("downloads", exist_ok=True)
@@ -96,7 +96,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status.edit_text("📤 جاري إرسال الفيديو...")
         # إرسال الفيديو كملف لتجنب مشاكل الحجم والمهلة
         with open(file_path, "rb") as video:
-        	await update.message.reply_document(
+                await update.message.reply_document(
         document=video,
         filename=os.path.basename(file_path),
         read_timeout=600,
