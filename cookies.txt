@@ -9,5 +9,4 @@
 .tiktok.com	TRUE	/	TRUE	0	tt_csrf_token	I9gd2ZbN-ojJP5nxQ4AuqZ1TZAtG_gKfYfhU
 .tiktok.com	TRUE	/	TRUE	1790770720	tt_chain_token	7vJ5G2XhuadNEpP5pd9+8w==
 .tiktok.com	TRUE	/	TRUE	1776082720	msToken	PbjaNEtwe7RFgIgrKxTTPWHrcuiQhA9N0Jz_m4P_l-QWat0n2cs7dXohR_YUs6yPVy-46dMNsJLTrfvW-hOaP6YFHGbLtuNv1FHWxjIrwyhJ4wfUnLD7XSIj
-www.tiktok.com	FALSE	/@y.m.n.f.l/video	FALSE	1775219020	_waftokenid	eyJ2Ijp7ImEiOiJCTXcrQzNOT3pOOG5jNTZyVHZ3Tjg0dTlPaExWVnBVQVZERUp6d0MrSE13PSIsImIiOjE3NzUyMTg3MjAsImMiOiJFZnhMQUgrNGcwU1V4UHVQcFpjclZSVjJMbnl4bHRUTjZtcklVV0NlUGc4PSJ9LCJzIjoiblphSitoNTVwZHR3TTdtY1JlcHBpT3FsM1d0Vk1HdmVXUzk2SlQveDJJZz0ifQ
 .facebook.com	TRUE	/	TRUE	1809778783	sb	X7DPabZu9AguZMl_DM4XftuV
