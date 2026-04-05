@@ -6,17 +6,42 @@ from telegram.ext import (
     CommandHandler,
     filters,
 )
+
 import yt_dlp
 import os
 import uuid
+import requests
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+from flask import Flask
+from threading import Thread
+
+BOT_TOKEN = os.getenv("7507458414:AAFSld8gcDYPk54khl3gyHJneJ2BNK2VXeU")
 
 # إنشاء مجلد التنزيل
 os.makedirs("downloads", exist_ok=True)
 
+# ------------------ Flask keep alive ------------------
 
-# رسالة الترحيب عند /start
+app_web = Flask("")
+
+
+@app_web.route("/")
+def home():
+    return "Bot is running!"
+
+
+def run_web():
+    app_web.run(host="0.0.0.0", port=8080)
+
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.daemon = True
+    t.start()
+
+# ------------------ Telegram commands ------------------
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
@@ -42,7 +67,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # تجاهل الرسائل غير النصية
     if not update.message or not update.message.text:
         return
 
@@ -59,26 +83,57 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⏳ جاري تحميل الفيديو، انتظر قليلاً..."
     )
 
-    # اسم فريد لكل فيديو حتى لا يعيد الفيديو السابق
+    # إصلاح روابط TikTok المختصرة vt.tiktok.com
+    try:
+        if "vt.tiktok.com" in url or "vm.tiktok.com" in url:
+            response = requests.get(
+                url,
+                allow_redirects=True,
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                },
+                timeout=20,
+            )
+            url = response.url
+    except:
+        pass
+
     unique_id = str(uuid.uuid4())
 
     options = {
         "outtmpl": f"downloads/{unique_id}.%(ext)s",
-        "format": "best[ext=mp4]/best",
+        "format": "bestvideo+bestaudio/best[ext=mp4]/best",
         "noplaylist": True,
         "quiet": True,
         "cookiefile": "cookies.txt",
         "nocheckcertificate": True,
         "merge_output_format": "mp4",
+        "followredirect": True,
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.tiktok.com/",
+        },
+        "extractor_args": {
+            "tiktok": {
+                "api_hostname": "api16-normal-c-useast1a.tiktokv.com"
+            }
+        },
     }
 
     try:
-        # تحميل الفيديو
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = ydl.prepare_filename(info)
 
-        # أحيانًا yt-dlp يغيّر الامتداد بعد الدمج
+        # البحث عن الملف الحقيقي إذا تغير الامتداد
         if not os.path.exists(file_path):
             base = os.path.splitext(file_path)[0]
 
@@ -88,37 +143,48 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     file_path = possible
                     break
 
-        # التحقق من وجود الملف
         if not os.path.exists(file_path):
             await status.edit_text("❌ لم أستطع العثور على الملف بعد التحميل.")
             return
 
         await status.edit_text("📤 جاري إرسال الفيديو...")
-        # إرسال الفيديو كملف لتجنب مشاكل الحجم والمهلة
-        with open(file_path, "rb") as video:
-                await update.message.reply_document(
-        document=video,
-        filename=os.path.basename(file_path),
-        read_timeout=600,
-        write_timeout=600,
-        connect_timeout=120,
-        pool_timeout=120,
-    )
 
-        # حذف رسالة الانتظار
+        with open(file_path, "rb") as video:
+            await update.message.reply_document(
+                document=video,
+                filename=os.path.basename(file_path),
+                read_timeout=600,
+                write_timeout=600,
+                connect_timeout=120,
+                pool_timeout=120,
+            )
+
         await status.delete()
 
-        # حذف الملف بعد الإرسال
-        os.remove(file_path)
+        try:
+            os.remove(file_path)
+        except:
+            pass
 
     except Exception as e:
+        error_text = str(e)
+
+        if "Unsupported URL" in error_text:
+            error_text = (
+                "هذا الرابط غير مدعوم أو أن TikTok أعاد توجيهه بشكل خاطئ.\n"
+                "جرّب إرسال رابط الفيديو المباشر أو الرابط المختصر vt.tiktok.com"
+            )
+
         try:
-            await status.edit_text(f"❌ حدث خطأ:\n{str(e)}")
+            await status.edit_text(f"❌ حدث خطأ:\n{error_text}")
         except:
-            await update.message.reply_text(f"❌ حدث خطأ:\n{str(e)}")
+            await update.message.reply_text(f"❌ حدث خطأ:\n{error_text}")
 
 
-# إعداد البوت مع زيادة المهلات
+# تشغيل Flask حتى يبقى البوت يعمل
+keep_alive()
+
+# إعداد البوت
 app = (
     ApplicationBuilder()
     .token(BOT_TOKEN)
@@ -129,9 +195,7 @@ app = (
     .build()
 )
 
-# أمر start
 app.add_handler(CommandHandler("start", start))
-
 app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, download_video)
 )
