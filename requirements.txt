@@ -1,0 +1,10 @@
+python-telegram-bot
+yt-dlp
+flask
+requests
+Pillow
+moviepy
+gTTS
+arabic-reshaper
+python-bidi
+google-genai
